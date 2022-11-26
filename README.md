@@ -1,8 +1,7 @@
 # uthread: A User Space Thread Library
 
 Inspired by [fiber](https://github.com/sysprog21/fiber), I implement 
-uthread on the foundation of my previous project [user mode thread library]
-(https://github.com/quantabase13/user_mode_thread_lib).
+uthread on the foundation of my previous project [user mode thread library](https://github.com/quantabase13/user_mode_thread_lib).
 
 The main difference between "uthread" and "user mode thread library" is 
 the scheduling mechanism.
