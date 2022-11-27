@@ -66,6 +66,7 @@ int pthread_create(_pthread_t *thread,
     tsk->args = args;
     tsk->thread_index = thread_index;
     tsk->timeslice = 5;
+    tsk->timeslice_cur = 5;
     tsk->task_priority = 0;
     *thread = thread_index;
     thread_index++;
@@ -96,8 +97,8 @@ static int tick(void *NOUSE)
     sigprocmask(SIG_BLOCK, &newmask, &oldmask);
 
     while (1) {
-        if (task_current != task_idle && task_current->timeslice > 0)
-            task_current->timeslice--;
+        if (task_current != task_idle && task_current->timeslice_cur > 0)
+            task_current->timeslice_cur--;
         usleep(500);
     }
     return 0;
