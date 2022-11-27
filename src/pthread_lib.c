@@ -8,22 +8,34 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include "bitmap.h"
 #include "linux/list.h"
+#include "sem.h"
 /* O(1) scheduler*/
 extern struct sched sched_bitmap;
 
+#define U_THREAD_MAX 16
 #define TIME_QUANTUM 500000 /* in us */
+
 /* timer management */
 static struct itimerval time_quantum;
 
 /* global spinlock for critical section _queue */
 static uint _spinlock = 0;
+
 /* idle task (main loop)*/
 task *task_idle;
 int thread_index = 0;
+
+typedef struct {
+    sem_t semaphore;
+    unsigned long *val;
+} sig_sem;
+
+static sig_sem sigsem_thread[U_THREAD_MAX];
 
 
 
@@ -57,6 +69,10 @@ int pthread_create(_pthread_t *thread,
     tsk->task_priority = 0;
     *thread = thread_index;
     thread_index++;
+
+    sigsem_thread[tsk->thread_index].val = NULL;
+    sem_init(&sigsem_thread[tsk->thread_index].semaphore, 0);
+
     while (__atomic_test_and_set(&_spinlock, __ATOMIC_ACQUIRE))
         ;
     sched_bitmap.enqueue(tsk);
@@ -145,8 +161,14 @@ static void pthread_wrapper(task *tsk)
     void (*funptr)(void *) = pc;
     task *task_tmp = tmp;
     funptr(task_tmp->args);
-    // asm("mov %%rax, %0;" : "=r"(value_ptr)::);
+
+    asm("mov %%rax, %0;" : "=r"(value_ptr)::);
     task_tmp->state = TERMINATED;
+    sem_post(&(sigsem_thread[task_tmp->thread_index].semaphore));
+    sigsem_thread[task_tmp->thread_index].val = malloc(sizeof(unsigned long));
+    memcpy(sigsem_thread[task_tmp->thread_index].val, value_ptr,
+           sizeof(unsigned long));
+
     while (__atomic_test_and_set(&_spinlock, __ATOMIC_ACQUIRE))
         ;
     task *task_next = sched_bitmap.elect((void *) 0);
@@ -167,11 +189,31 @@ static void pthread_wrapper(task *tsk)
     }
 }
 
+/* wait for thread termination */
+int pthread_join(_pthread_t thread, void **value_ptr)
+{
+    /* do P() in thread semaphore until the certain user-level thread is done */
+    sem_wait(&(sigsem_thread[thread].semaphore));
+    /* get the value's location passed to fiber_exit */
+    if (value_ptr && sigsem_thread[thread].val)
+        memcpy((unsigned long *) *value_ptr, sigsem_thread[thread].val,
+               sizeof(unsigned long));
+    return 0;
+}
+
+
 void pthread_exit(void *value_ptr)
 {
-    task_current->state = TERMINATED;
+    sem_post(&(sigsem_thread[task_current->thread_index].semaphore));
+    if (value_ptr){
+    sigsem_thread[task_current > thread_index].val =
+        malloc(sizeof(unsigned long));
+    memcpy(sigsem_thread[task_current->thread_index].val, value_ptr,
+           sizeof(unsigned long));       
+    }
     while (__atomic_test_and_set(&_spinlock, __ATOMIC_ACQUIRE))
         ;
+    task_current->state = TERMINATED;
     task *task_next = sched_bitmap.elect((void *) 0);
     __atomic_store_n(&_spinlock, 0, __ATOMIC_RELEASE);
     if (task_next == task_idle) {

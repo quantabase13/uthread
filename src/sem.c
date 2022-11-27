@@ -1,7 +1,7 @@
 #include "sem.h"
-#include "pthread_lib.h"
 #include <stdbool.h>
 #include "linux/list.h"
+#include "pthread_lib.h"
 
 static int down(sem_t *sem);
 static void up(sem_t *sem);
@@ -11,6 +11,7 @@ static int spin_unlock(spinlock_t *lock);
 int sem_init(sem_t *sem, unsigned int val)
 {
     *sem = (sem_t) SEMAPHORE_INITIALIZER(*sem, val);
+    return 0;
 }
 
 
@@ -63,13 +64,11 @@ static int down(sem_t *sem)
 
 static void up(struct semaphore *sem)
 {
-    spin_lock(&sem->lock);
     struct semaphore_waiter *waiter =
         list_first_entry(&sem->wait_list, struct semaphore_waiter, list);
     list_del(&waiter->list);
     waiter->up = true;
     waiter->task->state = RUNNING;
-    spin_unlock(&sem->lock);
 }
 
 

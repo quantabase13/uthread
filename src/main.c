@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include "pthread_lib.h"
 
-int foo();
-void bar();
-void baz();
+void *foo();
+void *bar();
+void *baz();
 
 int counter = 0;
 volatile unsigned int lock = 0;
@@ -20,16 +20,21 @@ int main()
     pthread_create(&a, NULL, (void *) foo, (void *) &test);
     pthread_create(&b, NULL, (void *) bar, (void *) &test1);
     pthread_create(&c, NULL, (void *) baz, (void *) &test2);
-    for (;;) {
-        ;
-    }
+    pthread_join(a, NULL);
+    pthread_join(b, NULL);
+    pthread_join(c, NULL);
+    return 0;
+
+    // for (;;) {
+    //     ;
+    // }
 }
 
-int foo(void *arg)
+void *foo(void *arg)
 {
     int counter_foo = *(int *) arg;
     int i = 0;
-    while (1) {
+    while (i<10000) {
         printf("counter_foo = %d\n", counter_foo);
         counter_foo -= 1;
         // printf("index = %d\n",(int) pthread_self());
@@ -43,11 +48,11 @@ int foo(void *arg)
     pthread_exit(NULL);
 }
 
-void bar(void *arg)
+void *bar(void *arg)
 {
     int counter_bar = *(int *) arg;
     int j = 0;
-    while (1) {
+    while (j < 10000) {
         printf("counter_bar= %d\n", counter_bar);
         counter_bar += 10;
         // printf("j = %d\n", j);
@@ -60,11 +65,11 @@ void bar(void *arg)
     pthread_exit(NULL);
 }
 
-void baz(void *arg)
+void *baz(void *arg)
 {
     int counter_baz = *(int *) arg;
     int i = 0;
-    while (1) {
+    while (i<10000) {
         printf("counter_baz= %d\n", counter_baz);
         counter_baz += 100;
         i++;

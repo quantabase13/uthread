@@ -38,5 +38,6 @@ int pthread_create(_pthread_t *thread,
                    const _pthread_attr_t *attr,
                    void *(*start_routine)(void *),
                    void *args);
+int pthread_join(_pthread_t thread, void **value_ptr);
 void pthread_exit(void *value_ptr);
 void pthread_yield(void);
