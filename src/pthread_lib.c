@@ -163,7 +163,6 @@ static void pthread_wrapper(task *tsk)
     funptr(task_tmp->args);
 
     asm("mov %%rax, %0;" : "=r"(value_ptr)::);
-    task_tmp->state = TERMINATED;
     sem_post(&(sigsem_thread[task_tmp->thread_index].semaphore));
     sigsem_thread[task_tmp->thread_index].val = malloc(sizeof(unsigned long));
     memcpy(sigsem_thread[task_tmp->thread_index].val, value_ptr,
@@ -171,6 +170,7 @@ static void pthread_wrapper(task *tsk)
 
     while (__atomic_test_and_set(&_spinlock, __ATOMIC_ACQUIRE))
         ;
+    task_tmp->state = TERMINATED;
     task *task_next = sched_bitmap.elect((void *) 0);
 
     __atomic_store_n(&_spinlock, 0, __ATOMIC_RELEASE);
