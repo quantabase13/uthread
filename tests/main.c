@@ -34,7 +34,7 @@ void *foo(void *arg)
 {
     int counter_foo = *(int *) arg;
     int i = 0;
-    while (i<10000) {
+    while (i<10) {
         printf("counter_foo = %d\n", counter_foo);
         counter_foo -= 1;
         // printf("index = %d\n",(int) pthread_self());
@@ -52,7 +52,7 @@ void *bar(void *arg)
 {
     int counter_bar = *(int *) arg;
     int j = 0;
-    while (j < 10000) {
+    while (j < 10) {
         printf("counter_bar= %d\n", counter_bar);
         counter_bar += 10;
         // printf("j = %d\n", j);
@@ -69,7 +69,7 @@ void *baz(void *arg)
 {
     int counter_baz = *(int *) arg;
     int i = 0;
-    while (i<10000) {
+    while (i<10) {
         printf("counter_baz= %d\n", counter_baz);
         counter_baz += 100;
         i++;
